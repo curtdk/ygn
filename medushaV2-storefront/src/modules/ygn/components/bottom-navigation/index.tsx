@@ -81,6 +81,14 @@ export default function BottomNavigation() {
     router.push(`/${countryCode}${path}`)
   }
 
+  // Hide bottom navigation on pages with their own fixed bottom buttons
+  const hiddenPaths = ["/ygn/configure", "/ygn/generate"]
+  const shouldHide = hiddenPaths.some((path) => pathname?.includes(path))
+
+  if (shouldHide) {
+    return null
+  }
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-gray-200">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-4">
