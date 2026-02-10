@@ -29,21 +29,39 @@ export default async function Nav() {
           <div className="flex items-center h-full">
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
+              className="txt-compact-xlarge-plus hover:text-ui-fg-base font-bold bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent"
               data-testid="nav-store-link"
             >
-              Medusa Store
+              忆光年
             </LocalizedClientLink>
           </div>
 
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             <div className="hidden small:flex items-center gap-x-6 h-full">
               <LocalizedClientLink
+                className="hover:text-ui-fg-base text-orange-600 font-medium"
+                href="/ygn/home"
+              >
+                场景选择
+              </LocalizedClientLink>
+              <LocalizedClientLink
+                className="hover:text-ui-fg-base"
+                href="/ygn/memories"
+              >
+                我的回忆
+              </LocalizedClientLink>
+              <LocalizedClientLink
+                className="hover:text-ui-fg-base"
+                href="/store"
+              >
+                商城
+              </LocalizedClientLink>
+              <LocalizedClientLink
                 className="hover:text-ui-fg-base"
                 href="/account"
                 data-testid="nav-account-link"
               >
-                Account
+                账户
               </LocalizedClientLink>
             </div>
             <Suspense
