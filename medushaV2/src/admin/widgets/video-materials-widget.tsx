@@ -1,5 +1,5 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk"
-import { Container, Heading, Button, Table, Input, Select } from "@medusajs/ui"
+import { Container, Heading, Button, Table, Input, Select, Label } from "@medusajs/ui"
 import { useState, useEffect } from "react"
 
 const VideoMaterialsWidget = ({ data }: { data: any }) => {
@@ -13,6 +13,8 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
     is_replaceable: true,
     sort_order: 0
   })
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   const productId = data?.id
 
@@ -34,17 +36,76 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
     }
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingFile(true)
+      const formData = new FormData()
+      formData.append("files", file)
+
+      const response = await fetch("/admin/uploads", {
+        method: "POST",
+        credentials: "include",
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error("上传失败")
+      }
+
+      const result = await response.json()
+      console.log("上传结果:", result)
+
+      // Medusa上传API返回格式: { files: [{ url, key, ... }] }
+      if (result.files && result.files.length > 0) {
+        const uploadedUrl = result.files[0].url
+        setNewMaterial({
+          ...newMaterial,
+          default_url: uploadedUrl
+        })
+        // 如果是图片，设置预览
+        if (file.type.startsWith('image/')) {
+          setPreviewImage(uploadedUrl)
+        }
+      } else {
+        alert("上传成功但无法获取文件URL")
+      }
+    } catch (error) {
+      console.error("上传失败:", error)
+      alert("文件上传失败")
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   const handleAddMaterial = async () => {
     try {
-      await fetch("/admin/video-materials", {
+      // 自动生成 material_key（基于名称的拼音或简单转换）
+      const materialKey = newMaterial.name
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^\w_]/g, '') || `material_${Date.now()}`
+
+      const dataToSend = {
+        ...newMaterial,
+        material_key: materialKey,
+        product_id: productId
+      }
+
+      console.log("准备保存的数据:", dataToSend)
+
+      const response = await fetch("/admin/video-materials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          ...newMaterial,
-          product_id: productId
-        })
+        body: JSON.stringify(dataToSend)
       })
+
+      const result = await response.json()
+      console.log("保存结果:", result)
+
       setIsAdding(false)
       setNewMaterial({
         name: "",
@@ -54,9 +115,11 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
         is_replaceable: true,
         sort_order: 0
       })
+      setPreviewImage(null)
       fetchMaterials()
     } catch (error) {
-      console.error("Failed to add material:", error)
+      console.error("保存失败:", error)
+      alert("保存失败，请查看控制台")
     }
   }
 
@@ -74,6 +137,13 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
     }
   }
 
+  const materialTypeLabels: Record<string, string> = {
+    image: "图片",
+    audio: "声音",
+    background: "背景",
+    video: "视频"
+  }
+
   return (
     <Container>
       <div className="flex items-center justify-between mb-4">
@@ -84,34 +154,85 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
       {isAdding && (
         <div className="mb-4 p-4 border rounded">
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <Input
-              placeholder="素材名称（如：角色1）"
-              value={newMaterial.name}
-              onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
-            />
-            <Input
-              placeholder="素材标识（如：character_1）"
-              value={newMaterial.material_key}
-              onChange={(e) => setNewMaterial({ ...newMaterial, material_key: e.target.value })}
-            />
-            <Select
-              value={newMaterial.material_type}
-              onValueChange={(value) => setNewMaterial({ ...newMaterial, material_type: value })}
-            >
-              <option value="image">图片</option>
-              <option value="audio">声音</option>
-              <option value="background">背景</option>
-              <option value="video">视频</option>
-            </Select>
-            <Input
-              placeholder="默认素材URL"
-              value={newMaterial.default_url}
-              onChange={(e) => setNewMaterial({ ...newMaterial, default_url: e.target.value })}
-            />
+            <div>
+              <Label className="mb-2">素材名称</Label>
+              <Input
+                placeholder="例如：角色1、背景音乐"
+                value={newMaterial.name}
+                onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label className="mb-2">素材类型</Label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={newMaterial.material_type}
+                onChange={(e) => setNewMaterial({ ...newMaterial, material_type: e.target.value })}
+              >
+                <option value="image">图片</option>
+                <option value="audio">声音</option>
+                <option value="background">背景</option>
+                <option value="video">视频</option>
+              </select>
+            </div>
+
+            <div className="col-span-2">
+              <Label className="mb-2">默认素材</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="file"
+                  accept="image/*,audio/*,video/*"
+                  onChange={handleFileUpload}
+                  disabled={uploadingFile}
+                />
+              </div>
+              {previewImage && (
+                <div className="mt-3">
+                  <img
+                    src={previewImage}
+                    alt="预览"
+                    className="max-w-xs h-32 object-cover rounded border"
+                  />
+                </div>
+              )}
+              {newMaterial.default_url && !previewImage && (
+                <div className="mt-2 text-sm text-gray-600 truncate">
+                  已上传: {newMaterial.default_url}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label className="mb-2">是否可替换</Label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={newMaterial.is_replaceable ? "true" : "false"}
+                onChange={(e) => setNewMaterial({ ...newMaterial, is_replaceable: e.target.value === "true" })}
+              >
+                <option value="true">是</option>
+                <option value="false">否</option>
+              </select>
+            </div>
+
+            <div>
+              <Label className="mb-2">排序顺序</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={newMaterial.sort_order}
+                onChange={(e) => setNewMaterial({ ...newMaterial, sort_order: parseInt(e.target.value) || 0 })}
+              />
+            </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleAddMaterial}>保存</Button>
-            <Button variant="secondary" onClick={() => setIsAdding(false)}>取消</Button>
+            <Button onClick={handleAddMaterial} disabled={!newMaterial.name || uploadingFile}>
+              {uploadingFile ? "上传中..." : "保存"}
+            </Button>
+            <Button variant="secondary" onClick={() => {
+              setIsAdding(false)
+              setPreviewImage(null)
+            }}>取消</Button>
           </div>
         </div>
       )}
@@ -120,10 +241,10 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell>名称</Table.HeaderCell>
-            <Table.HeaderCell>标识Key</Table.HeaderCell>
             <Table.HeaderCell>类型</Table.HeaderCell>
             <Table.HeaderCell>默认素材</Table.HeaderCell>
             <Table.HeaderCell>可替换</Table.HeaderCell>
+            <Table.HeaderCell>排序</Table.HeaderCell>
             <Table.HeaderCell>操作</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
@@ -131,10 +252,33 @@ const VideoMaterialsWidget = ({ data }: { data: any }) => {
           {materials.map((material: any) => (
             <Table.Row key={material.id}>
               <Table.Cell>{material.name}</Table.Cell>
-              <Table.Cell>{material.material_key}</Table.Cell>
-              <Table.Cell>{material.material_type}</Table.Cell>
-              <Table.Cell className="max-w-xs truncate">{material.default_url}</Table.Cell>
+              <Table.Cell>{materialTypeLabels[material.material_type] || material.material_type}</Table.Cell>
+              <Table.Cell>
+                {material.default_url ? (
+                  material.material_type === 'image' ? (
+                    <a
+                      href={material.default_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <img
+                        src={material.default_url}
+                        alt={material.name}
+                        className="h-16 w-16 object-cover rounded border hover:opacity-80 transition-opacity cursor-pointer"
+                      />
+                    </a>
+                  ) : (
+                    <a href={material.default_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      查看素材
+                    </a>
+                  )
+                ) : (
+                  "未设置"
+                )}
+              </Table.Cell>
               <Table.Cell>{material.is_replaceable ? "是" : "否"}</Table.Cell>
+              <Table.Cell>{material.sort_order}</Table.Cell>
               <Table.Cell>
                 <Button
                   variant="secondary"

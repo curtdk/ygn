@@ -1,6 +1,10 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import multer from 'multer'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
+
+// 配置multer用于文件上传
+const upload = multer({ storage: multer.memoryStorage() })
 
 module.exports = defineConfig({
   projectConfig: {
@@ -11,6 +15,14 @@ module.exports = defineConfig({
       authCors: process.env.AUTH_CORS!,
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
+      // 添加中间件配置
+      middleware: [
+        {
+          method: ['POST'],
+          matcher: '/store/uploads',
+          middlewares: [upload.array('files')],
+        },
+      ],
     }
   },
   modules: [

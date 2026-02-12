@@ -4,7 +4,7 @@ import Welcome from "./pages/Welcome";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
-import ConfigureRole from "./pages/ConfigureRole";
+import ProductDetail from "./pages/ProductDetail";
 import Recharge from "./pages/Recharge";
 import GenerateVideo from "./pages/GenerateVideo";
 import Share from "./pages/Share";
@@ -15,7 +15,7 @@ import PersonManager from "./pages/PersonManager";
 const queryClient = new QueryClient();
 
 const App = () => {
-  console.log('忆光年 app initialized - Memory video generation app started');
+  console.log('忆光年 app initialized - Memory video generation app with API integration');
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -26,7 +26,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/configure" element={<ConfigureRole />} />
+            <Route path="/configure" element={<ProductDetail />} />
             <Route path="/recharge" element={<Recharge />} />
             <Route path="/generate" element={<GenerateVideo />} />
             <Route path="/share" element={<Share />} />

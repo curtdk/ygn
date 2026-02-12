@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import SceneCard from "@modules/ygn/components/scene-card"
 import BottomNavigation from "@modules/ygn/components/bottom-navigation"
+import { productApi } from "@lib/data/video-api"
 import {
   MOCK_SCENES,
-  MOCK_CATEGORIES,
   MOCK_USER_CREDITS,
 } from "@lib/data/ygn"
 
@@ -19,11 +19,71 @@ export default function YgnHomeTemplate({
 }: YgnHomeTemplateProps) {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [scenes, setScenes] = useState<any[]>([])
+  const [categories, setCategories] = useState<Array<{ id: string; label: string }>>([
+    { id: "all", label: "全部" }
+  ])
+  const [loading, setLoading] = useState(true)
 
-  const filteredScenes =
-    selectedCategory === "all"
-      ? MOCK_SCENES
-      : MOCK_SCENES.filter((s) => s.category === selectedCategory)
+  // 从API获取分类和产品数据
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+
+        // 获取分类
+        const collectionsResponse = await productApi.getCollections()
+        const apiCategories = [
+          { id: "all", label: "全部" },
+          ...(collectionsResponse.collections || []).map((col: any) => ({
+            id: col.id,
+            label: col.title
+          }))
+        ]
+        setCategories(apiCategories)
+
+        // 获取产品（根据选择的分类）
+        const collectionId = selectedCategory === "all" ? undefined : selectedCategory
+        const response = await productApi.getProducts(collectionId)
+
+        // 过滤出有video_material的产品
+        const videoProducts = []
+        for (const product of response.products || []) {
+          try {
+            // 检查产品是否有素材
+            const materialsResponse = await productApi.getProductMaterials(product.id)
+            if (materialsResponse.materials && materialsResponse.materials.length > 0) {
+              // 转换为Scene格式
+              videoProducts.push({
+                id: product.id,
+                name: product.title,
+                description: product.description || '生成专属回忆视频',
+                previewImage: product.thumbnail || product.images?.[0]?.url || 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=300&h=200&fit=crop',
+                creditsRequired: product.variants?.[0]?.prices?.[0]?.amount
+                  ? Math.floor(product.variants[0].prices[0].amount / 100)
+                  : 10,
+                category: product.collection_id || 'all',
+                isPopular: product.metadata?.is_popular === 'true'
+              })
+            }
+          } catch (error) {
+            console.log(`Product ${product.id} has no materials, skipping`)
+          }
+        }
+
+        // 如果没有产品，使用默认数据
+        setScenes(videoProducts.length > 0 ? videoProducts : MOCK_SCENES)
+      } catch (error) {
+        console.error('Failed to fetch data:', error)
+        // 使用默认数据作为后备
+        setScenes(MOCK_SCENES)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [selectedCategory])
 
   const handleSceneSelect = (sceneId: string) => {
     router.push(`/${countryCode}/ygn/configure?scene=${sceneId}`)
@@ -77,7 +137,7 @@ export default function YgnHomeTemplate({
         {/* Category Filter Tabs */}
         <div className="px-4 mt-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {MOCK_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
@@ -108,9 +168,15 @@ export default function YgnHomeTemplate({
 
         {/* Scene Grid */}
         <div className="px-4 mt-4">
-          {filteredScenes.length > 0 ? (
+          {loading ? (
+            /* Loading State */
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-500 mt-4 text-sm">加载中...</p>
+            </div>
+          ) : scenes.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
-              {filteredScenes.map((scene) => (
+              {scenes.map((scene) => (
                 <SceneCard
                   key={scene.id}
                   scene={scene}
