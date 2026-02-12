@@ -13,6 +13,14 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     }
   },
+  modules: [
+    {
+      resolve: "./src/modules/video-material",
+    },
+    {
+      resolve: "./src/modules/user-video",
+    },
+  ],
   plugins: [
     {
       resolve: "@rokmohar/medusa-plugin-meilisearch",
