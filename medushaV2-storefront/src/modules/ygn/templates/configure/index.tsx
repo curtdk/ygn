@@ -211,7 +211,7 @@ export default function YgnConfigureTemplate({
         {/* 可替换素材 */}
         <div className="px-4 py-4">
           <h3 className="font-semibold text-lg mb-4 text-gray-900">可替换素材</h3>
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             {materials.map((material) => (
               <div key={material.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
