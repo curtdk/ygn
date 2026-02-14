@@ -112,8 +112,8 @@ export default function YgnConfigureTemplate({
         materials_used: materialsUsed
       })
 
-      // 跳转到生成页面
-      router.push(`/${countryCode}/ygn/generate?videoId=${response.video.id}`)
+      // 直接跳转到我的回忆页面等待视频生成完成
+      router.push(`/${countryCode}/ygn/memories`)
     } catch (error) {
       console.error('Failed to create video generation:', error)
       alert('生成失败，请重试')
