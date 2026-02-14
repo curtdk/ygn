@@ -34,28 +34,42 @@ export const processVideoFaceReplacementStep = createStep(
         }
       })
 
-      // 暂时使用测试URL（等本地文件上传到远程后再改回来）
-      const TEST_SOURCE_VIDEO = 'http://viapi-test.oss-cn-shanghai.aliyuncs.com/viapi-3.0domepic/videoenhan/MergeVideoFace/MergeVideoFace2.mp4'
-      const TEST_TEMPLATE_FACE = 'http://viapi-test.oss-cn-shanghai.aliyuncs.com/viapi-3.0domepic/videoenhan/MergeVideoFace/MergeVideoFace-fm2.jpg'
-      const TEST_REPLACEMENT_FACE = 'http://viapi-test.oss-cn-shanghai.aliyuncs.com/viapi-3.0domepic/imageenhan/MakeSuperResolutionImage/MakeSuperResolutionImage10.png'
+      // 3. 从 materials_used 中提取视频和图片 URL
+      const materialsUsed = userVideo.materials_used as Record<string, any>
 
-      console.log('使用测试URL进行人脸替换')
+      // 3.1 获取源视频 URL
+      const sourceVideoMaterial = materialsUsed.shipin
+      if (!sourceVideoMaterial || !sourceVideoMaterial.original_url) {
+        throw new Error('未找到源视频')
+      }
+      const sourceVideoUrl = decodeURIComponent(sourceVideoMaterial.original_url)
+      console.log('源视频 URL:', sourceVideoUrl)
 
-      const mergeInfos = [{
-        imageUrl: TEST_REPLACEMENT_FACE,
-        templateFaceUrl: TEST_TEMPLATE_FACE
-      }]
+      // 3.2 获取所有需要替换的人脸
+      const mergeInfos = Object.entries(materialsUsed)
+        .filter(([key, material]: [string, any]) =>
+          material.type === 'image' && material.replaced_url
+        )
+        .map(([key, material]: [string, any]) => ({
+          templateFaceUrl: decodeURIComponent(material.original_url),
+          imageUrl: decodeURIComponent(material.replaced_url)
+        }))
+
+      if (mergeInfos.length === 0) {
+        throw new Error('没有找到需要替换的人脸')
+      }
 
       console.log('找到需要替换的人脸数量:', mergeInfos.length)
+      console.log('人脸替换信息:', JSON.stringify(mergeInfos, null, 2))
 
-      // 7. 调用阿里云视频人脸替换服务
+      // 4. 调用阿里云视频人脸替换服务
       const aliyunService = new AliyunVideoFaceService()
 
-      // 7.1 创建模板
+      // 4.1 创建模板
       console.log('创建视频模板...')
-      const templateId = await aliyunService.createFaceVideoTemplate(TEST_SOURCE_VIDEO)
+      const templateId = await aliyunService.createFaceVideoTemplate(sourceVideoUrl)
 
-      // 7.2 合并视频人脸
+      // 4.2 合并视频人脸
       console.log('开始人脸替换...')
       const jobId = await aliyunService.mergeVideoModelFace({
         templateId,
@@ -63,7 +77,7 @@ export const processVideoFaceReplacementStep = createStep(
         mergeInfos
       })
 
-      // 7.3 轮询结果
+      // 4.3 轮询结果
       console.log('等待处理完成...')
       const result = await aliyunService.pollJobResult(jobId, {
         maxAttempts: 120, // 10分钟
@@ -74,7 +88,7 @@ export const processVideoFaceReplacementStep = createStep(
         throw new Error('视频生成失败：未获取到视频URL')
       }
 
-      // 7.4 下载视频到系统临时目录（避免触发文件监视器重启）
+      // 5. 下载视频到系统临时目录（避免触发文件监视器重启）
       console.log('下载生成的视频...')
       const timestamp = Date.now()
       const tempDir = os.tmpdir()
@@ -82,7 +96,7 @@ export const processVideoFaceReplacementStep = createStep(
 
       await aliyunService.downloadVideo(result.videoUrl, tempPath)
 
-      // 7.5 上传到 OSS
+      // 6. 上传到 OSS
       console.log('上传视频到 OSS...')
       const { Modules } = await import('@medusajs/framework/utils')
       const fileService = container.resolve(Modules.FILE)
@@ -96,15 +110,15 @@ export const processVideoFaceReplacementStep = createStep(
 
       const publicUrl = uploadedFiles[0].url
 
-      // 7.6 删除临时文件
+      // 7. 删除临时文件
       console.log('删除临时文件...')
       fs.unlinkSync(tempPath)
 
-      // 7.7 清理模板
+      // 8. 清理模板
       console.log('清理模板...')
       await aliyunService.deleteFaceVideoTemplate(templateId)
 
-      // 8. 更新用户视频记录
+      // 9. 更新用户视频记录
       // @ts-expect-error - TypeScript suggests updateUserVideoes but runtime uses updateUserVideos
       await userVideoService.updateUserVideos({
         selector: { id: input.user_video_id },
