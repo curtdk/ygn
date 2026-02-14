@@ -4,6 +4,7 @@ import { USER_VIDEO_MODULE } from "../../../modules/user-video"
 import { VIDEO_MATERIAL_MODULE } from "../../../modules/video-material"
 import * as path from "path"
 import * as fs from "fs"
+import * as os from "os"
 
 type ProcessVideoInput = {
   user_video_id: string
@@ -25,7 +26,8 @@ export const processVideoFaceReplacementStep = createStep(
       }
 
       // 2. 更新状态为处理中
-      await userVideoService.updateUserVideoes({
+      // @ts-expect-error - TypeScript suggests updateUserVideoes but runtime uses updateUserVideos
+      await userVideoService.updateUserVideos({
         selector: { id: input.user_video_id },
         data: {
           status: "processing"
@@ -72,22 +74,38 @@ export const processVideoFaceReplacementStep = createStep(
         throw new Error('视频生成失败：未获取到视频URL')
       }
 
-      // 7.4 下载视频
+      // 7.4 下载视频到系统临时目录（避免触发文件监视器重启）
       console.log('下载生成的视频...')
       const timestamp = Date.now()
-      const filename = `${timestamp}-${input.user_video_id}.mp4`
-      const localPath = path.join(process.cwd(), 'static', filename)
+      const tempDir = os.tmpdir()
+      const tempPath = path.join(tempDir, `medusa-video-${timestamp}-${input.user_video_id}.mp4`)
 
-      await aliyunService.downloadVideo(result.videoUrl, localPath)
+      await aliyunService.downloadVideo(result.videoUrl, tempPath)
 
-      const publicUrl = `/static/${filename}`
+      // 7.5 上传到 OSS
+      console.log('上传视频到 OSS...')
+      const { Modules } = await import('@medusajs/framework/utils')
+      const fileService = container.resolve(Modules.FILE)
+      const fileBuffer = fs.readFileSync(tempPath)
+      const uploadedFiles = await fileService.createFiles([{
+        filename: `video-${input.user_video_id}-${timestamp}.mp4`,
+        mimeType: 'video/mp4',
+        content: fileBuffer.toString('base64'),
+      }])
 
-      // 7.5 清理模板
+      const publicUrl = uploadedFiles[0].url
+
+      // 7.6 删除临时文件
+      console.log('删除临时文件...')
+      fs.unlinkSync(tempPath)
+
+      // 7.7 清理模板
       console.log('清理模板...')
       await aliyunService.deleteFaceVideoTemplate(templateId)
 
       // 8. 更新用户视频记录
-      await userVideoService.updateUserVideoes({
+      // @ts-expect-error - TypeScript suggests updateUserVideoes but runtime uses updateUserVideos
+      await userVideoService.updateUserVideos({
         selector: { id: input.user_video_id },
         data: {
           status: "completed",
@@ -105,7 +123,8 @@ export const processVideoFaceReplacementStep = createStep(
       console.error('视频处理失败:', error.message)
 
       // 更新状态为失败
-      await userVideoService.updateUserVideoes({
+      // @ts-expect-error - TypeScript suggests updateUserVideoes but runtime uses updateUserVideos
+      await userVideoService.updateUserVideos({
         selector: { id: input.user_video_id },
         data: {
           status: "failed",
