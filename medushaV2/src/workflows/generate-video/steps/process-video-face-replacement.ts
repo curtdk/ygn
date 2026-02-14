@@ -91,6 +91,7 @@ export const processVideoFaceReplacementStep = createStep(
         filename: `video-${input.user_video_id}-${timestamp}.mp4`,
         mimeType: 'video/mp4',
         content: fileBuffer.toString('base64'),
+        access: "public" as const,
       }])
 
       const publicUrl = uploadedFiles[0].url
