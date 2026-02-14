@@ -20,6 +20,31 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/user-video",
     },
+    // 阿里云 OSS 文件存储配置
+    {
+      resolve: "@medusajs/file",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/file-s3",
+            id: "s3",
+            options: {
+              file_url: process.env.OSS_FILE_URL,
+              access_key_id: process.env.ALIYUN_ACCESS_KEY_ID,
+              secret_access_key: process.env.ALIYUN_ACCESS_KEY_SECRET,
+              region: process.env.OSS_REGION,
+              bucket: process.env.OSS_BUCKET,
+              endpoint: process.env.OSS_ENDPOINT,
+              prefix: "uploads/",
+              // 阿里云 OSS 使用虚拟主机风格访问
+              additional_client_config: {
+                forcePathStyle: false,
+              },
+            },
+          },
+        ],
+      },
+    },
   ],
   plugins: [
     {

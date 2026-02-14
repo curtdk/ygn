@@ -27,7 +27,8 @@ export async function POST(
     // TODO: 3. 扣除积分
 
     // 4. 创建视频生成记录
-    const userVideo = await userVideoService.createUserVideoes({
+    // @ts-expect-error - TypeScript suggests createUserVideoes but runtime uses createUserVideos
+    const userVideo = await userVideoService.createUserVideos({
       user_id: (req as any).auth?.actor_id || "guest",
       product_id,
       title,
