@@ -18,7 +18,7 @@ export async function POST(
       })
     })
 
-    const input = req.files as Express.Multer.File[]
+    const input = (req as any).files as any[]
 
     if (!input?.length) {
       return res.status(400).json({ error: "没有上传文件" })

@@ -25,8 +25,11 @@ export const processVideoFaceReplacementStep = createStep(
       }
 
       // 2. 更新状态为处理中
-      await userVideoService.updateUserVideoes(input.user_video_id, {
-        status: "processing"
+      await userVideoService.updateUserVideoes({
+        selector: { id: input.user_video_id },
+        data: {
+          status: "processing"
+        }
       })
 
       // 暂时使用测试URL（等本地文件上传到远程后再改回来）
@@ -84,9 +87,12 @@ export const processVideoFaceReplacementStep = createStep(
       await aliyunService.deleteFaceVideoTemplate(templateId)
 
       // 8. 更新用户视频记录
-      await userVideoService.updateUserVideoes(input.user_video_id, {
-        status: "completed",
-        video_url: publicUrl
+      await userVideoService.updateUserVideoes({
+        selector: { id: input.user_video_id },
+        data: {
+          status: "completed",
+          video_url: publicUrl
+        }
       })
 
       console.log('视频处理完成:', publicUrl)
@@ -99,9 +105,12 @@ export const processVideoFaceReplacementStep = createStep(
       console.error('视频处理失败:', error.message)
 
       // 更新状态为失败
-      await userVideoService.updateUserVideoes(input.user_video_id, {
-        status: "failed",
-        error_message: error.message
+      await userVideoService.updateUserVideoes({
+        selector: { id: input.user_video_id },
+        data: {
+          status: "failed",
+          error_message: error.message
+        }
       })
 
       throw error

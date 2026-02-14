@@ -72,7 +72,7 @@ export class AliyunVideoFaceService {
       const response = await this.client.addFaceVideoTemplateWithOptions(request, runtime)
 
       // AddFaceVideoTemplate is async, returns requestId as jobId
-      const jobId = response.body.requestId
+      const jobId = response.body?.requestId
       if (!jobId) {
         throw new Error('Failed to create template: No requestId returned')
       }
@@ -119,7 +119,7 @@ export class AliyunVideoFaceService {
       const response = await this.client.mergeVideoModelFaceWithOptions(request, runtime)
 
       // MergeVideoModelFace also returns requestId as jobId
-      const jobId = response.body.requestId || response.body.data?.jobId
+      const jobId = response.body?.requestId || response.body?.data?.jobId
       if (!jobId) {
         throw new Error('Failed to merge video face: No requestId or jobId returned')
       }
@@ -144,13 +144,13 @@ export class AliyunVideoFaceService {
 
       const response = await this.client.getAsyncJobResultWithOptions(request, runtime)
 
-      const status = response.body.data?.status
+      const status = response.body?.data?.status
       const result: JobResult = {
         status: (status === 'SUCCESS' || status === 'PROCESS_SUCCESS') ? 'SUCCESS' : (status === 'FAILED' || status === 'PROCESS_FAILED') ? 'FAILED' : 'PROCESSING',
-        data: response.body.data
+        data: response.body?.data
       }
 
-      if ((status === 'SUCCESS' || status === 'PROCESS_SUCCESS') && response.body.data?.result) {
+      if ((status === 'SUCCESS' || status === 'PROCESS_SUCCESS') && response.body?.data?.result) {
         // Parse the result if it's a JSON string
         try {
           const parsedResult = JSON.parse(response.body.data.result)
@@ -162,7 +162,7 @@ export class AliyunVideoFaceService {
         }
       }
 
-      if ((status === 'FAILED' || status === 'PROCESS_FAILED') && response.body.data?.errorMessage) {
+      if ((status === 'FAILED' || status === 'PROCESS_FAILED') && response.body?.data?.errorMessage) {
         result.errorMessage = response.body.data.errorMessage
       }
 
