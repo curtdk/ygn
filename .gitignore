@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Meilisearch 数据目录
+meilisearch_data/
+
+# 生成的视频文件
+medushaV2/static/*.mp4
+medushaV2/static/*.mov
+medushaV2/static/*.avi
+medushaV2-storefront/public/videos/*.mp4
+
+# 测试输出
+test-output.mp4
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+.next/
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak

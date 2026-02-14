@@ -24,3 +24,13 @@ build
 !.yarn/versions
 
 .medusa
+# Meilisearch 数据目录
+meilisearch_data/
+
+# 生成的视频文件
+static/*.mp4
+static/*.mov
+static/*.avi
+
+# 测试输出
+test-output.mp4
