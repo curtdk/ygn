@@ -1,8 +1,59 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { MOCK_CREDIT_PACKAGES, MOCK_PURCHASE_RECORDS } from "@lib/data/ygn"
+import { MOCK_CREDIT_PACKAGES } from "@lib/data/ygn"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || 'http://localhost:9000'
+const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ''
+
+// 获取用户余额
+const fetchBalance = async () => {
+  const response = await fetch(`${API_BASE_URL}/store/user/balance`, {
+    headers: {
+      'x-publishable-api-key': PUBLISHABLE_KEY
+    },
+    credentials: 'include'
+  })
+  if (!response.ok) {
+    throw new Error('获取余额失败')
+  }
+  const data = await response.json()
+  return data.balance
+}
+
+// 创建充值订单
+const createRechargeOrder = async (packageId: string, amount: number, credits: number) => {
+  const response = await fetch(`${API_BASE_URL}/store/recharge/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-publishable-api-key': PUBLISHABLE_KEY
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      package_id: packageId,
+      amount,
+      credits
+    })
+  })
+  return response.json()
+}
+
+// 获取充值记录
+const fetchRechargeHistory = async () => {
+  const response = await fetch(`${API_BASE_URL}/store/recharge/history`, {
+    headers: {
+      'x-publishable-api-key': PUBLISHABLE_KEY
+    },
+    credentials: 'include'
+  })
+  if (!response.ok) {
+    return []
+  }
+  const data = await response.json()
+  return data.records
+}
 
 interface YgnRechargeTemplateProps {
   countryCode: string
@@ -13,17 +64,57 @@ export default function YgnRechargeTemplate({
 }: YgnRechargeTemplateProps) {
   const router = useRouter()
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<"wechat" | "alipay">("wechat")
-  const [currentCredits] = useState(25)
+  const [paymentMethod, setPaymentMethod] = useState<"wechat" | "alipay">("alipay")
+  const [currentCredits, setCurrentCredits] = useState(0)
+  const [purchaseRecords, setPurchaseRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
   const selectedPkg = MOCK_CREDIT_PACKAGES.find((p) => p.id === selectedPackage)
 
-  const handlePurchase = () => {
+  // 加载用户余额和充值记录
+  useEffect(() => {
+    fetchBalance().then(balance => {
+      setCurrentCredits(balance)
+    }).catch(error => {
+      console.error('获取余额失败:', error)
+    })
+
+    fetchRechargeHistory().then(records => {
+      setPurchaseRecords(records)
+    }).catch(error => {
+      console.error('获取充值记录失败:', error)
+    })
+  }, [])
+
+  const handlePurchase = async () => {
     if (!selectedPkg) return
-    setTimeout(() => {
-      alert(`充值成功！已购买${selectedPkg.name}，获得${selectedPkg.credits + selectedPkg.bonusCredits}积分`)
-      router.push(`/${countryCode}/ygn/home`)
-    }, 500)
+
+    if (paymentMethod !== 'alipay') {
+      alert('目前仅支持支付宝支付')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // 创建充值订单并获取支付 URL
+      const result = await createRechargeOrder(
+        selectedPkg.id,
+        selectedPkg.price,
+        selectedPkg.credits + selectedPkg.bonusCredits
+      )
+
+      if (result.success) {
+        // 跳转到支付宝支付页面
+        window.location.href = result.payment_url
+      } else {
+        alert(result.error || '创建订单失败，请重试')
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('充值失败:', error)
+      alert('充值失败，请重试')
+      setLoading(false)
+    }
   }
 
   return (
@@ -153,9 +244,10 @@ export default function YgnRechargeTemplate({
           <div className="px-4 mt-5">
             <button
               onClick={handlePurchase}
-              className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold rounded-xl shadow-lg shadow-orange-200 active:scale-[0.98] transition-transform"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold rounded-xl shadow-lg shadow-orange-200 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              立即充值 ¥{selectedPkg.price}
+              {loading ? '处理中...' : `立即充值 ¥${selectedPkg.price}`}
             </button>
           </div>
         )}
@@ -163,16 +255,20 @@ export default function YgnRechargeTemplate({
         {/* Purchase History */}
         <div className="px-4 mt-6">
           <h2 className="text-base font-semibold text-gray-800 mb-3">充值记录</h2>
-          {MOCK_PURCHASE_RECORDS.length === 0 ? (
+          {purchaseRecords.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">暂无充值记录</p>
           ) : (
             <div className="space-y-2">
-              {MOCK_PURCHASE_RECORDS.map((record) => (
+              {purchaseRecords.map((record: any) => (
                 <div key={record.id} className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{record.packageName}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{record.date} | {record.method}</p>
+                      <p className="text-sm font-medium text-gray-800">
+                        {MOCK_CREDIT_PACKAGES.find(p => p.id === record.package_id)?.name || '充值套餐'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {new Date(record.date).toLocaleDateString()} | {record.method}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-orange-600">+{record.credits}积分</p>

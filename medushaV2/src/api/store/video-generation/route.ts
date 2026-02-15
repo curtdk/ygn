@@ -22,14 +22,67 @@ export async function POST(
 
     console.log('收到视频生成请求:', { product_id, title, materials_used })
 
-    // TODO: 1. 验证用户积分
-    // TODO: 2. 创建订单
-    // TODO: 3. 扣除积分
+    // 1. 获取产品价格
+    const { Modules } = await import('@medusajs/framework/utils')
+    const productService = req.scope.resolve(Modules.PRODUCT)
+    const product = await productService.retrieveProduct(product_id, {
+      relations: ['variants', 'variants.prices']
+    })
 
-    // 4. 创建视频生成记录
+    const price = product.variants?.[0]?.prices?.[0]?.amount || 0
+    const priceInCredits = Math.floor(price / 100) // 转换为积分（1元=1积分）
+
+    console.log(`产品价格：${price}分 = ${priceInCredits}积分`)
+
+    // 2. 验证用户余额
+    const customerId = (req as any).auth?.actor_id || "guest"
+    const customerService = req.scope.resolve(Modules.CUSTOMER)
+    const customer = await customerService.retrieveCustomer(customerId)
+    const balance = customer.metadata?.balance || 0
+
+    console.log(`用户 ${customerId} 当前余额：${balance}积分`)
+
+    if (balance < priceInCredits) {
+      return res.status(400).json({
+        code: "insufficient_balance",
+        message: "余额不足，请先充值",
+        required: priceInCredits,
+        current: balance
+      })
+    }
+
+    // 3. 创建订单
+    const orderService = req.scope.resolve(Modules.ORDER)
+    const order = await orderService.createOrders({
+      currency_code: "cny",
+      customer_id: customerId,
+      metadata: {
+        type: "video_generation",
+        product_id,
+        materials_used,
+        price: priceInCredits,
+        payment_status: "paid"
+      }
+    })
+
+    console.log(`订单已创建：${order.id}`)
+
+    // 4. 扣除余额
+    await customerService.updateCustomers({
+      id: customerId,
+      metadata: {
+        ...customer.metadata,
+        balance: balance - priceInCredits
+      }
+    })
+
+    console.log(`扣费成功：用户 ${customerId} 消费 ${priceInCredits} 积分，剩余余额：${balance - priceInCredits}`)
+
+    // 5. 创建视频生成记录
     // @ts-expect-error - TypeScript suggests createUserVideoes but runtime uses createUserVideos
     const userVideo = await userVideoService.createUserVideos({
-      user_id: (req as any).auth?.actor_id || "guest",
+      user_id: customerId,
+      order_id: order.id,  // 关联订单
       product_id,
       title,
       materials_used,
@@ -38,7 +91,7 @@ export async function POST(
 
     console.log('用户视频记录已创建:', userVideo.id)
 
-    // 5. 异步触发视频生成工作流
+    // 6. 异步触发视频生成工作流
     generateVideoWorkflow(req.scope)
       .run({
         input: {
