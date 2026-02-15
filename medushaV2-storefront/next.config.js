@@ -46,6 +46,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "ygnsh.oss-cn-shanghai.aliyuncs.com",
+      },
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
             {

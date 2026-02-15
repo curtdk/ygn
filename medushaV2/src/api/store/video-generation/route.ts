@@ -25,17 +25,55 @@ export async function POST(
     // 1. 获取产品价格
     const { Modules } = await import('@medusajs/framework/utils')
     const productService = req.scope.resolve(Modules.PRODUCT)
-    const product = await productService.retrieveProduct(product_id, {
-      relations: ['variants', 'variants.prices']
+
+    // 先获取产品基本信息
+    const product = await productService.retrieveProduct(product_id)
+
+    // 然后获取产品的 variants
+    const variants = await productService.listProductVariants({
+      product_id: [product_id]
     })
 
-    const price = product.variants?.[0]?.prices?.[0]?.amount || 0
+    // 获取第一个 variant 的价格
+    const variant = variants[0]
+    const price = variant?.calculated_price?.calculated_amount || 0
     const priceInCredits = Math.floor(price / 100) // 转换为积分（1元=1积分）
 
     console.log(`产品价格：${price}分 = ${priceInCredits}积分`)
 
-    // 2. 验证用户余额
-    const customerId = (req as any).auth?.actor_id || "guest"
+    // 2. 获取用户ID - 从JWT token中提取
+    let customerId = (req as any).auth?.actor_id || (req as any).auth?.customer_id
+
+    // 如果 req.auth 未定义，尝试从 cookie 中的 JWT 解析
+    if (!customerId) {
+      const cookies = req.headers.cookie?.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=')
+        acc[key] = value
+        return acc
+      }, {} as Record<string, string>)
+
+      const jwt = cookies?._medusa_jwt
+
+      if (jwt) {
+        try {
+          // 解码 JWT (base64)
+          const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString())
+          customerId = payload.actor_id || payload.app_metadata?.customer_id
+          console.log('从JWT中提取用户ID:', customerId)
+        } catch (error) {
+          console.error('JWT解析失败:', error)
+        }
+      }
+    }
+
+    if (!customerId) {
+      return res.status(401).json({
+        code: "unauthorized",
+        message: "请先登录后再生成视频"
+      })
+    }
+
+    // 3. 验证用户余额
     const customerService = req.scope.resolve(Modules.CUSTOMER)
     const customer = await customerService.retrieveCustomer(customerId)
     const balance = customer.metadata?.balance || 0
@@ -51,7 +89,7 @@ export async function POST(
       })
     }
 
-    // 3. 创建订单
+    // 4. 创建订单
     const orderService = req.scope.resolve(Modules.ORDER)
     const order = await orderService.createOrders({
       currency_code: "cny",
@@ -67,7 +105,7 @@ export async function POST(
 
     console.log(`订单已创建：${order.id}`)
 
-    // 4. 扣除余额
+    // 5. 扣除余额
     await customerService.updateCustomers({
       id: customerId,
       metadata: {
@@ -78,7 +116,7 @@ export async function POST(
 
     console.log(`扣费成功：用户 ${customerId} 消费 ${priceInCredits} 积分，剩余余额：${balance - priceInCredits}`)
 
-    // 5. 创建视频生成记录
+    // 6. 创建视频生成记录
     // @ts-expect-error - TypeScript suggests createUserVideoes but runtime uses createUserVideos
     const userVideo = await userVideoService.createUserVideos({
       user_id: customerId,
@@ -91,7 +129,7 @@ export async function POST(
 
     console.log('用户视频记录已创建:', userVideo.id)
 
-    // 6. 异步触发视频生成工作流
+    // 7. 异步触发视频生成工作流
     generateVideoWorkflow(req.scope)
       .run({
         input: {
