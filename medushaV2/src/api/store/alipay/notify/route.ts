@@ -65,16 +65,15 @@ export async function POST(
 
         // 获取订单信息
         const order = await orderService.retrieveOrder(orderId)
-        const credits = order.metadata?.credits || 0
-        const customerId = order.customer_id
+        const credits = (order.metadata?.credits as number) || 0
+        const customerId = order.customer_id!
 
         // 获取用户当前余额
         const customer = await customerService.retrieveCustomer(customerId)
-        const currentBalance = customer.metadata?.balance || 0
+        const currentBalance = (customer.metadata?.balance as number) || 0
 
         // 增加余额
-        await customerService.updateCustomers({
-          id: customerId,
+        await customerService.updateCustomers(customerId, {
           metadata: {
             ...customer.metadata,
             balance: currentBalance + credits
@@ -82,7 +81,7 @@ export async function POST(
         })
 
         // 更新订单状态
-        await orderService.updateOrders({
+        await orderService.updateOrders([{
           id: orderId,
           metadata: {
             ...order.metadata,
@@ -90,7 +89,7 @@ export async function POST(
             paid_at: new Date().toISOString(),
             alipay_trade_no: trade_no
           }
-        })
+        }])
 
         console.log(`充值成功：用户 ${customerId} 充值 ${credits} 积分，当前余额：${currentBalance + credits}`)
       }

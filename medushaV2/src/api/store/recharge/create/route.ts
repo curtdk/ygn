@@ -100,13 +100,13 @@ export async function POST(
     )
 
     // 3. 更新订单，保存支付宝订单号
-    await orderService.updateOrders({
+    await orderService.updateOrders([{
       id: order.id,
       metadata: {
         ...order.metadata,
         alipay_trade_no: outTradeNo
       }
-    })
+    }])
 
     console.log(`支付宝订单创建成功：${outTradeNo}`)
 

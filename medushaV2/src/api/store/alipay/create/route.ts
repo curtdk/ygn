@@ -25,9 +25,9 @@ export async function POST(
 
     // 初始化支付宝SDK
     const alipaySdk = new AlipaySdk({
-      appId: process.env.ALIPAY_APP_ID,
-      privateKey: process.env.ALIPAY_PRIVATE_KEY,
-      alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY,
+      appId: process.env.ALIPAY_APP_ID!,
+      privateKey: process.env.ALIPAY_PRIVATE_KEY!,
+      alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY!,
       gateway: 'https://openapi.alipay.com/gateway.do',
       signType: 'RSA2',
     })

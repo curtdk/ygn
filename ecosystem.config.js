@@ -21,14 +21,14 @@ module.exports = {
     {
       name: 'medusa-backend',
       script: 'npm',
-      args: 'run start',
+      args: 'run dev',
       cwd: '/www/wwwroot/nextjs/ygn/medushaV2',
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
       env: {
-        NODE_ENV: 'production',
+        NODE_ENV: 'development',
         PORT: 9000
       },
       error_file: './logs/medusa-backend-error.log',

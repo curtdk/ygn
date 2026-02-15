@@ -44,14 +44,15 @@ export async function GET(
 
     // 查询充值订单
     const orders = await orderService.listOrders({
-      filters: {
-        customer_id: customerId,
-        "metadata.type": "recharge"
-      },
+      customer_id: customerId
+    }, {
       order: { created_at: "DESC" }
     })
 
-    const records = orders.map((order: any) => ({
+    // 过滤出充值订单
+    const rechargeOrders = orders.filter((order: any) => order.metadata?.type === "recharge")
+
+    const records = rechargeOrders.map((order: any) => ({
       id: order.id,
       date: order.created_at,
       package_id: order.metadata?.package_id,

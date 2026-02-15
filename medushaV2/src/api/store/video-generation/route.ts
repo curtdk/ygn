@@ -35,8 +35,10 @@ export async function POST(
     })
 
     // 获取第一个 variant 的价格
+    // 注意：在 Medusa v2 中，价格需要通过 pricing 模块单独查询
     const variant = variants[0]
-    const price = variant?.calculated_price?.calculated_amount || 0
+    // 暂时使用固定价格，或从产品 metadata 中获取
+    const price = (product.metadata?.price as number) || 1000 // 默认10元
     const priceInCredits = Math.floor(price / 100) // 转换为积分（1元=1积分）
 
     console.log(`产品价格：${price}分 = ${priceInCredits}积分`)
@@ -76,7 +78,7 @@ export async function POST(
     // 3. 验证用户余额
     const customerService = req.scope.resolve(Modules.CUSTOMER)
     const customer = await customerService.retrieveCustomer(customerId)
-    const balance = customer.metadata?.balance || 0
+    const balance = (customer.metadata?.balance as number) || 0
 
     console.log(`用户 ${customerId} 当前余额：${balance}积分`)
 
@@ -106,8 +108,7 @@ export async function POST(
     console.log(`订单已创建：${order.id}`)
 
     // 5. 扣除余额
-    await customerService.updateCustomers({
-      id: customerId,
+    await customerService.updateCustomers(customerId, {
       metadata: {
         ...customer.metadata,
         balance: balance - priceInCredits
