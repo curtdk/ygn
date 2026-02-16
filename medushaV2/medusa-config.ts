@@ -5,12 +5,24 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    redisUrl: process.env.REDIS_URL,
+
+   
+
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
       authCors: process.env.AUTH_CORS!,
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
+      // cookieSecure: false, 
+      
+      /**
+       * 设置为 "lax" 或 "none"（none 需开启 secure）。
+       * 对于通过 Nginx 代理的情况，"lax" 是最稳妥的选择。
+       */
+      // cookieSameSite: "lax",
+      
     }
   },
   modules: [

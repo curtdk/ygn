@@ -11,11 +11,43 @@ Make sure to run 'medusa build' before starting the server.
 
 ## 原因分析
 
-Medusa v2 在生产模式下启动时，会尝试加载管理后台的构建文件。虽然运行 `npm run build` 后文件确实存在于 `.medusa/server/public/admin/` 目录，但由于某些原因，Medusa 无法正确找到这些文件。
+Medusa v2 在生产模式下启动时，会尝试加载管理后台的构建文件。
+
+**根本原因**：路径不匹配
+- **构建输出位置**：`.medusa/server/public/admin/index.html`
+- **运行时查找位置**：`./public/admin/index.html`
+- **结果**：Medusa 无法找到构建文件，导致启动失败
 
 ## 解决方案
 
-### 方案一：使用开发模式（推荐）
+### 方案一：创建符号链接（推荐 - 已实施）✅
+
+通过创建符号链接解决路径不匹配问题，可以正常使用生产模式。
+
+**实施步骤**：
+```bash
+cd /www/wwwroot/nextjs/ygn/medushaV2
+mkdir -p public
+ln -sf "$(pwd)/.medusa/server/public/admin" public/admin
+```
+
+**优点**：
+- 不修改代码
+- 快速解决问题
+- 可以使用生产模式（性能更好）
+- 管理后台正常访问
+
+**注意事项**：
+- 每次部署后需要重新创建符号链接
+- 已集成到 `manage.sh` 脚本中自动处理
+
+**当前状态**：
+- ✅ 符号链接已创建
+- ✅ 生产模式正常启动
+- ✅ Admin 可以访问
+- ✅ 已集成到部署脚本
+
+### 方案二：使用开发模式（备选）
 
 在 PM2 配置中使用 `npm run dev` 而不是 `npm run start`：
 
@@ -74,7 +106,25 @@ export default defineConfig({
 
 ## 当前配置
 
-项目当前使用**方案一**（开发模式），配置文件：`/www/wwwroot/nextjs/ygn/ecosystem.config.js`
+项目当前使用**方案一**（符号链接 + 生产模式），配置文件：`/www/wwwroot/nextjs/ygn/ecosystem.config.js`
+
+**PM2 配置**：
+```javascript
+{
+  name: 'medusa-backend',
+  script: 'npm',
+  args: 'run start',  // 生产模式
+  env: {
+    NODE_ENV: 'production',
+    PORT: 9000
+  }
+}
+```
+
+**符号链接**：
+- 位置：`/www/wwwroot/nextjs/ygn/medushaV2/public/admin`
+- 指向：`/www/wwwroot/nextjs/ygn/medushaV2/.medusa/server/public/admin`
+- 自动创建：通过 `manage.sh` 脚本自动处理
 
 ## 访问地址
 

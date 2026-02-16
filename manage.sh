@@ -37,7 +37,15 @@ start_services() {
     # 创建日志目录
     mkdir -p $PROJECT_DIR/logs
 
+    # 创建 admin 符号链接
+    echo -e "${YELLOW}创建 admin 符号链接...${NC}"
+    cd $PROJECT_DIR/medushaV2
+    mkdir -p public
+    ln -sf "$(pwd)/.medusa/server/public/admin" public/admin
+    echo -e "${GREEN}符号链接创建完成${NC}"
+
     # 启动服务
+    cd $PROJECT_DIR
     pm2 start ecosystem.config.js
 
     echo -e "${GREEN}服务启动完成！${NC}"
@@ -118,8 +126,15 @@ deploy_production() {
     cd $PROJECT_DIR/medushaV2
     npm run build
 
-    # 6. 启动服务
-    echo -e "${YELLOW}6. 启动服务...${NC}"
+    # 6. 创建 admin 符号链接
+    echo -e "${YELLOW}6. 创建 admin 符号链接...${NC}"
+    cd $PROJECT_DIR/medushaV2
+    mkdir -p public
+    ln -sf "$(pwd)/.medusa/server/public/admin" public/admin
+    echo -e "${GREEN}符号链接创建完成${NC}"
+
+    # 7. 启动服务
+    echo -e "${YELLOW}7. 启动服务...${NC}"
     cd $PROJECT_DIR
     pm2 start ecosystem.config.js
     pm2 save
