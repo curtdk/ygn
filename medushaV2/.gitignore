@@ -34,3 +34,7 @@ static/*.avi
 
 # 测试输出
 test-output.mp4
+
+.env
+.env.production
+.env.local
