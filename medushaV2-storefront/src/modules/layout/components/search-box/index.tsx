@@ -22,6 +22,7 @@ export default function SearchBox() {
   const [suggestions, setSuggestions] = useState<HttpTypes.StoreProduct[]>([])
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
   
   const searchRef = useRef<HTMLDivElement>(null)
@@ -29,16 +30,19 @@ export default function SearchBox() {
   
   const debouncedQuery = useDebounce(query, 300)
 
-  // Load recent searches from localStorage
+  // Load recent searches from localStorage (disabled for SSR)
   useEffect(() => {
-    const stored = localStorage.getItem(RECENT_SEARCHES_KEY)
-    if (stored) {
-      try {
-        setRecentSearches(JSON.parse(stored))
-      } catch (e) {
-        console.error("Failed to load recent searches", e)
-      }
-    }
+    setIsClient(true)
+    // Disabled for now - causing SSR issues
+    // if (typeof window === "undefined") return
+    // const stored = localStorage.getItem(RECENT_SEARCHES_KEY)
+    // if (stored) {
+    //   try {
+    //     setRecentSearches(JSON.parse(stored))
+    //   } catch (e) {
+    //     console.error("Failed to load recent searches", e)
+    //   }
+    // }
   }, [])
 
   // Fetch suggestions when debounced query changes
@@ -73,21 +77,23 @@ export default function SearchBox() {
   }, [])
 
   const saveRecentSearch = (searchQuery: string) => {
-    const trimmed = searchQuery.trim()
-    if (!trimmed) return
-
-    const updated = [
-      trimmed,
-      ...recentSearches.filter((s) => s !== trimmed),
-    ].slice(0, MAX_RECENT_SEARCHES)
-
-    setRecentSearches(updated)
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated))
+    // Disabled for now - causing SSR issues
+    // if (!isClient || typeof window === "undefined") return
+    // const trimmed = searchQuery.trim()
+    // if (!trimmed) return
+    // const updated = [
+    //   trimmed,
+    //   ...recentSearches.filter((s) => s !== trimmed),
+    // ].slice(0, MAX_RECENT_SEARCHES)
+    // setRecentSearches(updated)
+    // localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated))
   }
 
   const clearRecentSearches = () => {
-    setRecentSearches([])
-    localStorage.removeItem(RECENT_SEARCHES_KEY)
+    // Disabled for now - causing SSR issues
+    // if (!isClient || typeof window === "undefined") return
+    // setRecentSearches([])
+    // localStorage.removeItem(RECENT_SEARCHES_KEY)
   }
 
   const handleSearch = useCallback((searchQuery: string) => {

@@ -12,6 +12,7 @@ declare global {
   const Badge: typeof import('lucide-react').Badge
   const Calendar: typeof import('lucide-react').Calendar
   const Camera: typeof import('lucide-react').Camera
+  const Check: typeof import('lucide-react').Check
   const CheckCircle2: typeof import('lucide-react').CheckCircle2
   const CheckIcon: typeof import('lucide-react').CheckIcon
   const ChevronDown: typeof import('lucide-react').ChevronDown
@@ -32,6 +33,7 @@ declare global {
   const ExternalLink: typeof import('lucide-react').ExternalLink
   const Eye: typeof import('lucide-react').Eye
   const EyeOff: typeof import('lucide-react').EyeOff
+  const File: typeof import('lucide-react').File
   const Film: typeof import('lucide-react').Film
   const Filter: typeof import('lucide-react').Filter
   const Form: typeof import('lucide-react').Form
@@ -48,6 +50,7 @@ declare global {
   const Key: typeof import('lucide-react').Key
   const Link: typeof import('lucide-react').Link
   const List: typeof import('lucide-react').List
+  const Loader2: typeof import('lucide-react').Loader2
   const Loader2Icon: typeof import('lucide-react').Loader2Icon
   const Lock: typeof import('lucide-react').Lock
   const LogOut: typeof import('lucide-react').LogOut
@@ -70,8 +73,8 @@ declare global {
   const SearchIcon: typeof import('lucide-react').SearchIcon
   const Section: typeof import('lucide-react').Section
   const Settings: typeof import('lucide-react').Settings
-  const Share2: typeof import('lucide-react').Share2
   const Share: typeof import('lucide-react').Share
+  const Share2: typeof import('lucide-react').Share2
   const Sheet: typeof import('lucide-react').Sheet
   const Shield: typeof import('lucide-react').Shield
   const Sidebar: typeof import('lucide-react').Sidebar
