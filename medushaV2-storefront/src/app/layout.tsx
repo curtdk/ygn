@@ -2,6 +2,7 @@ import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import "styles/globals.css"
 import "@lib/util/local-storage-polyfill"
+import Providers from "./providers"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -9,9 +10,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-mode="light">
+    <html lang="zh" data-mode="light">
       <body>
-        <main className="relative">{props.children}</main>
+        <Providers>
+          <main className="relative">{props.children}</main>
+        </Providers>
       </body>
     </html>
   )

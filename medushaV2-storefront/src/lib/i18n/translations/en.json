@@ -1,0 +1,61 @@
+{
+  "common": {
+    "home": "Home",
+    "store": "Store",
+    "account": "Account",
+    "cart": "Cart",
+    "menu": "Menu",
+    "search": "Search",
+    "settings": "Settings",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "loading": "Loading..."
+  },
+  "ygn": {
+    "title": "Memory Light Year",
+    "sceneSelection": "Scene Selection",
+    "home": "Home",
+    "myMemories": "My Memories",
+    "settings": "Settings",
+    "personManager": "Person Manager",
+    "generateVideo": "Generate Video",
+    "configure": "Configure",
+    "share": "Share",
+    "recharge": "Recharge",
+    "shippingTo": "Shipping to",
+    "sortBy": "Sort by",
+    "latestArrivals": "Latest Arrivals",
+    "priceLowToHigh": "Price: Low -> High",
+    "priceHighToLow": "Price: High -> Low",
+    "allProducts": "All products"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
+    "inStock": "In Stock",
+    "viewDetails": "View Details"
+  },
+  "cart": {
+    "cart": "Cart",
+    "emptyCart": "Your cart is empty",
+    "emptyMessage": "You don't have anything in your cart. Let's change that, use the link below to start browsing our products.",
+    "exploreProducts": "Explore products",
+    "checkout": "Checkout",
+    "goToCheckout": "Go to checkout",
+    "continueShopping": "Continue Shopping",
+    "subtotalExcl": "Subtotal (excl. shipping and taxes)",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "discount": "Discount",
+    "taxes": "Taxes",
+    "total": "Total",
+    "summary": "Summary"
+  },
+  "account": {
+    "profile": "Profile",
+    "addresses": "Addresses",
+    "orders": "My Orders",
+    "orderDetails": "Order Details"
+  }
+}
