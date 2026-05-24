@@ -24,7 +24,7 @@ export async function GET(
     return res.status(401).json({ error: "Unauthorized" })
   }
 
-  const provider = await serviceProviderService.getServiceProviderByCustomerId(loggedInUserId)
+  const provider = await serviceProviderService.getProviderByCustomerId(loggedInUserId)
   const applications = await serviceProviderService.listServiceProviderApplications({
     customer_id: loggedInUserId,
   })
