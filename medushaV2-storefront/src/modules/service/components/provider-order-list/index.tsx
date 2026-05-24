@@ -1,22 +1,26 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Container } from "@medusajs/ui"
-import { Button } from "@medusajs/ui"
+import { Container, Badge, clx } from "@medusajs/ui"
 
-interface ServiceOrder {
+interface ProviderOrderListProps {
+  onOrderClick?: (order: any) => void
+}
+
+interface Order {
   id: string
   service_product_id: string
   status: string
-  requirements: any
   created_at: string
-  customer: any
-  service_product: any
+  customer_id: string
+  result_url?: string
+  rating?: number
 }
 
-export default function ProviderOrderList() {
-  const [orders, setOrders] = useState<ServiceOrder[]>([])
+export default function ProviderOrderList({ onOrderClick }: ProviderOrderListProps) {
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadOrders()
@@ -30,30 +34,17 @@ export default function ProviderOrderList() {
           Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
         },
       })
+      
       if (response.ok) {
-        const result = await response.json()
-        setOrders(result.orders || [])
+        const data = await response.json()
+        setOrders(data.orders || [])
+      } else {
+        throw new Error("Failed to load orders")
       }
     } catch (err) {
-      console.error("Failed to load orders:", err)
+      setError(err instanceof Error ? err.message : "加载订单失败")
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleOrderAction = async (orderId: string, action: string) => {
-    try {
-      await fetch(`/store/service-orders/${orderId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
-        },
-        body: JSON.stringify({ action }),
-      })
-      loadOrders()
-    } catch (err) {
-      console.error("Failed to process order:", err)
     }
   }
 
@@ -63,85 +54,109 @@ export default function ProviderOrderList() {
       accepted: "bg-blue-100 text-blue-800",
       in_progress: "bg-purple-100 text-purple-800",
       completed: "bg-green-100 text-green-800",
-      cancelled: "bg-gray-100 text-gray-800",
+      cancelled: "bg-red-100 text-red-800",
     }
     return styles[status] || "bg-gray-100 text-gray-800"
+  }
+
+  const getStatusText = (status: string) => {
+    const texts: Record<string, string> = {
+      pending: "待接单",
+      accepted: "已接单",
+      in_progress: "服务中",
+      completed: "已完成",
+      cancelled: "已取消",
+    }
+    return texts[status] || status
   }
 
   if (loading) {
     return (
       <Container className="py-8">
         <div className="flex justify-center">
-          <div className="animate-pulse text-gray-500">Loading orders...</div>
+          <div className="animate-pulse text-gray-500">加载中...</div>
+        </div>
+      </Container>
+    )
+  }
+
+  if (error) {
+    return (
+      <Container className="py-8">
+        <div className="text-red-500 text-center">{error}</div>
+      </Container>
+    )
+  }
+
+  if (orders.length === 0) {
+    return (
+      <Container className="py-8">
+        <div className="text-center text-gray-500">
+          <p>暂无服务商订单</p>
+          <p className="text-sm mt-2">成为认证服务商后可以接单</p>
         </div>
       </Container>
     )
   }
 
   return (
-    <Container className="py-8">
-      <h2 className="text-xl font-semibold mb-6">Provider Orders</h2>
-      
-      {orders.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">
-          No orders found.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div key={order.id} className="p-4 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`px-3 py-1 text-sm rounded-full ${getStatusBadge(order.status)}`}>
-                  {order.status}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {new Date(order.created_at).toLocaleDateString()}
-                </span>
+    <div className="space-y-4">
+      {orders.map((order) => (
+        <div
+          key={order.id}
+          onClick={() => onOrderClick?.(order)}
+          className={clx(
+            "bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-orange-300 transition-colors",
+            onOrderClick && "cursor-pointer"
+          )}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="font-mono text-sm text-gray-500 mb-2">
+                订单号: {order.id.slice(0, 8)}...
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500">Order ID</div>
-                  <div className="font-mono text-sm">{order.id}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Customer</div>
-                  <div>{order.customer?.email || "N/A"}</div>
-                </div>
+              <div className="flex items-center gap-2">
+                <Badge className={getStatusBadge(order.status)}>
+                  {getStatusText(order.status)}
+                </Badge>
+                {order.rating && (
+                  <span className="text-yellow-500">
+                    {"★".repeat(order.rating)}
+                  </span>
+                )}
               </div>
-              {order.status === "pending" && (
-                <div className="mt-4">
-                  <Button 
-                    size="small" 
-                    onClick={() => handleOrderAction(order.id, "accept")}
-                  >
-                    Accept Order
-                  </Button>
-                </div>
-              )}
-              {order.status === "accepted" && (
-                <div className="mt-4">
-                  <Button 
-                    size="small" 
-                    onClick={() => handleOrderAction(order.id, "start")}
-                  >
-                    Start Processing
-                  </Button>
-                </div>
-              )}
-              {order.status === "in_progress" && (
-                <div className="mt-4">
-                  <Button 
-                    size="small" 
-                    onClick={() => handleOrderAction(order.id, "complete")}
-                  >
-                    Mark Complete
-                  </Button>
-                </div>
-              )}
+              <div className="text-sm text-gray-500 mt-2">
+                客户ID: {order.customer_id.slice(0, 8)}...
+              </div>
+              <div className="text-sm text-gray-500">
+                创建时间: {new Date(order.created_at).toLocaleDateString()}
+              </div>
             </div>
-          ))}
+            {order.result_url && (
+              <img
+                src={order.result_url}
+                alt="结果预览"
+                className="w-16 h-16 object-cover rounded"
+              />
+            )}
+          </div>
+          
+          {/* Action buttons for pending orders */}
+          {order.status === "pending" && onOrderClick && (
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOrderClick(order)
+                }}
+                className="flex-1 bg-blue-500 text-white py-2 rounded text-sm hover:bg-blue-600"
+              >
+                抢单
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </Container>
+      ))}
+    </div>
   )
 }

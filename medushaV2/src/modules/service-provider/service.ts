@@ -8,60 +8,41 @@ class ServiceProviderModuleService extends MedusaService({
   ServiceProviderApplication,
   CustomerReferral,
 }) {
-  async getServiceProviderByCustomerId(customerId: string) {
+  async getReferralByCode(referralCode: string) {
+    const referrals = await this.listCustomerReferrals({
+      referral_code: referralCode,
+    })
+    return referrals[0] || null
+  }
+
+  async getProviderByCustomerId(customerId: string) {
     const providers = await this.listServiceProviders({
       customer_id: customerId,
     })
     return providers[0] || null
   }
 
-  async isApprovedProvider(customerId: string) {
-    const provider = await this.getServiceProviderByCustomerId(customerId)
-    return provider?.status === "approved"
-  }
-
-  async getReferralsByCustomerId(customerId: string) {
-    return await this.listCustomerReferrals({
-      referrer_id: customerId,
+  async createReferralIfNotExists(referrerId: string, refereeId: string, level: number) {
+    // Check if referral already exists
+    const existing = await this.listCustomerReferrals({
+      referrer_id: referrerId,
+      referee_id: refereeId,
     })
-  }
-
-  async getReferralChain(customerId: string, maxLevel: number = 3) {
-    const chain: Array<{ level: number; referrer_id: string }> = []
-    let currentId = customerId
-    let currentLevel = 1
-
-    while (currentLevel <= maxLevel) {
-      const referrals = await this.listCustomerReferrals({
-        customer_id: currentId,
-        level: currentLevel,
-      })
-
-      if (referrals.length === 0 || !referrals[0].referrer_id) {
-        break
-      }
-
-      chain.push({
-        level: currentLevel,
-        referrer_id: referrals[0].referrer_id,
-      })
-
-      currentId = referrals[0].referrer_id
-      currentLevel++
+    
+    if (existing.length > 0) {
+      return existing[0]
     }
 
-    return chain
-  }
+    // Generate a simple referral code
+    const referralCode = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-  async generateReferralCode(): Promise<string> {
-    const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    let code = ""
-    for (let i = 0; i < 8; i++) {
-      code += characters.charAt(Math.floor(Math.random() * characters.length))
-    }
-    return code
+    return await this.createCustomerReferrals({
+      referrer_id: referrerId,
+      referee_id: refereeId,
+      level,
+      referral_code: referralCode,
+    })
   }
 }
 
 export default ServiceProviderModuleService
-export type { ServiceProviderModuleService }

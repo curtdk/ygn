@@ -22,6 +22,9 @@ const ServiceOrder = model.define("service_order", {
   platform_fee: model.number().nullable(), // 平台费用
   started_at: model.dateTime().nullable(),
   completed_at: model.dateTime().nullable(),
+  rating: model.number().nullable(), // 客户评分 1-5
+  review_comment: model.text().nullable(), // 评价内容
+  reviewed_at: model.dateTime().nullable(), // 评价时间
 })
 
 export default ServiceOrder

@@ -1,6 +1,14 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { SERVICE_PRODUCT_MODULE } from "../../../../modules/service-product"
 
+interface OrderActionBody {
+  action: string
+  result_url?: string
+  result_thumbnail?: string
+  rating?: number
+  comment?: string
+}
+
 export async function GET(
   req: MedusaRequest,
   res: MedusaResponse
@@ -20,7 +28,8 @@ export async function POST(
   const serviceProductService = req.scope.resolve(SERVICE_PRODUCT_MODULE)
   const loggedInUserId = (req as any).auth?.customer?.id
   const { id } = req.params
-  const { action, result_url, result_thumbnail } = req.body
+  const body = req.body as OrderActionBody
+  const { action, result_url, result_thumbnail, rating, comment } = body
 
   if (!loggedInUserId) {
     return res.status(401).json({ error: "Unauthorized" })
@@ -49,9 +58,19 @@ export async function POST(
   }
 
   if (action === "cancel") {
-    const updated = await serviceProductService.updateServiceOrders(id, {
+    const updated = await serviceProductService.updateServiceOrders({
+      id,
       status: "cancelled",
     })
+    return res.json({ order: updated })
+  }
+
+  if (action === "review") {
+    // Customer reviews the completed order
+    if (!rating) {
+      return res.status(400).json({ error: "rating is required" })
+    }
+    const updated = await serviceProductService.reviewOrder(id, rating, comment)
     return res.json({ order: updated })
   }
 

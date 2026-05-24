@@ -19,6 +19,8 @@ const AccountNav: React.FC<AccountNavProps> = ({ customer }) => {
     { href: "/account/addresses", label: "地址" },
     { href: "/account/orders", label: "订单" },
     { href: "/account/service-provider", label: "服务商中心" },
+    { href: "/account/distribution", label: "分销中心" },
+    { href: "/account/team", label: "我的团队" },
   ]
 
   return (

@@ -35,18 +35,29 @@ class ServiceProductModuleService extends MedusaService({
     if (order.status !== "pending") {
       throw new Error("Order is not in pending status")
     }
-    return await this.updateServiceOrders(orderId, {
+    return await this.updateServiceOrders({
+      id: orderId,
       provider_id: providerId,
       status: "accepted",
     })
   }
 
   async completeOrder(orderId: string, resultUrl: string, resultThumbnail?: string) {
-    return await this.updateServiceOrders(orderId, {
+    return await this.updateServiceOrders({
+      id: orderId,
       status: "completed",
       result_url: resultUrl,
       result_thumbnail: resultThumbnail || null,
       completed_at: new Date(),
+    })
+  }
+
+  async reviewOrder(orderId: string, rating: number, comment?: string) {
+    return await this.updateServiceOrders({
+      id: orderId,
+      rating,
+      review_comment: comment || null,
+      reviewed_at: new Date(),
     })
   }
 
