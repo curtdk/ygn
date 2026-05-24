@@ -56,6 +56,8 @@ export default function YgnHomeTemplate({
               // 转换为Scene格式
               videoProducts.push({
                 id: product.id,
+                handle: product.handle, // 添加handle用于跳转
+                variantId: product.variants?.[0]?.id, // 添加variantId
                 name: product.title,
                 description: product.description || '生成专属回忆视频',
                 previewImage: product.thumbnail || product.images?.[0]?.url || 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=300&h=200&fit=crop',
@@ -86,7 +88,16 @@ export default function YgnHomeTemplate({
   }, [selectedCategory])
 
   const handleSceneSelect = (sceneId: string) => {
-    router.push(`/${countryCode}/ygn/configure?scene=${sceneId}`)
+    // 找到对应的scene
+    const scene = scenes.find(s => s.id === sceneId)
+    if (scene && scene.handle) {
+      // 跳转到服务产品页面
+      const variantParam = scene.variantId ? `?v_id=${scene.variantId}` : ''
+      router.push(`/${countryCode}/service/product/${scene.handle}${variantParam}`)
+    } else {
+      // 后备：使用原来的configure页面
+      router.push(`/${countryCode}/ygn/configure?scene=${sceneId}`)
+    }
   }
 
   const handlePersonManager = () => {
