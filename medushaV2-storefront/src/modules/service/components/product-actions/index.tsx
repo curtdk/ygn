@@ -181,10 +181,10 @@ export default function ServiceProductActions({
           data-testid="buy-now-button"
         >
           {!selectedVariant && !options
-            ? "Select variant"
+            ? "选择规格"
             : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Buy Now"}
+            ? "缺货"
+            : "立即购买"}
         </Button>
       </div>
     </>
