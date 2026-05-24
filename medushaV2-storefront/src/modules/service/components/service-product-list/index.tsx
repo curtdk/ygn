@@ -26,11 +26,7 @@ export default function ServiceProductList() {
   const loadProducts = async () => {
     try {
       setLoading(true)
-      const response = await fetch("http://localhost:9000/store/service-products", {
-        headers: {
-          "x-publishable-api-key": "pk_27e90a2b8c5d4cb6b678b2be59be8e3c3065414263f702a6086f3c12d283de61",
-        },
-      })
+      const response = await fetch("/store/service-products")
       if (response.ok) {
         const result = await response.json()
         setProducts(result.service_products || [])

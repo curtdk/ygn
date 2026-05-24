@@ -1,54 +1,35 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { SERVICE_PRODUCT_MODULE } from "../../../modules/service-product"
 
-export async function GET(
-  req: MedusaRequest,
-  res: MedusaResponse
-) {
-  try {
-    // Get auth headers from request
-    const publishableKey = req.headers["x-publishable-api-key"] as string
+export async function GET(req: MedusaRequest, res: MedusaResponse) {
+  const serviceProductService = req.scope.resolve(SERVICE_PRODUCT_MODULE)
 
-    if (!publishableKey) {
-      return res.status(400).json({
-        error: "Missing publishable API key",
-      })
-    }
+  const products = await serviceProductService.listServiceProducts(
+    { is_active: true },
+    { order: { created_at: "DESC" } }
+  )
 
-    // Fetch all published products using native fetch
-    const baseUrl = process.env.MEDUSA_BACKEND_URL || "http://localhost:9000"
-    const url = new URL(`${baseUrl}/store/products`)
-    url.searchParams.set("limit", "100")
-    url.searchParams.set("fields", "id,title,description,thumbnail,handle,status,metadata")
+  res.json({ service_products: products, count: products.length })
+}
 
-    const response = await fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        "x-publishable-api-key": publishableKey,
-        "Content-Type": "application/json",
-      },
-    })
+export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  const serviceProductService = req.scope.resolve(SERVICE_PRODUCT_MODULE)
+  const body = req.body as any
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.status}`)
-    }
+  const product = await serviceProductService.createServiceProducts({
+    product_id: body.product_id || `sp_${Date.now()}`,
+    title: body.title,
+    service_type: body.service_type || "general",
+    description: body.description || null,
+    image_url: body.image_url || null,
+    estimated_duration: body.estimated_duration || null,
+    requirements: body.requirements || null,
+    commission_rate: body.commission_rate ?? 0.10,
+    profit_sharing_level1: body.profit_sharing_level1 ?? 0.10,
+    profit_sharing_level2: body.profit_sharing_level2 ?? 0.05,
+    profit_sharing_level3: body.profit_sharing_level3 ?? 0.02,
+    is_active: body.is_active ?? true,
+  })
 
-    const data = await response.json()
-
-    // Filter for service products (metadata.is_service = true)
-    const allProducts = data.products || []
-    const serviceProducts = allProducts.filter((product: any) => {
-      return product.metadata?.is_service === true
-    })
-
-    res.json({
-      service_products: serviceProducts,
-      count: serviceProducts.length,
-    })
-  } catch (error: any) {
-    console.error("Service products error:", error)
-    res.status(500).json({
-      error: "Failed to fetch service products",
-      message: error.message,
-    })
-  }
+  res.status(201).json({ service_product: product })
 }

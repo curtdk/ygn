@@ -32,6 +32,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/commission",
     },
     {
+      resolve: "./src/modules/service-settings",
+    },
+    {
       resolve: "@medusajs/file",
       options: {
         providers: [
