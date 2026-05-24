@@ -57,6 +57,12 @@ export default async function Nav() {
                 商城
               </LocalizedClientLink>
               <LocalizedClientLink
+                className="hover:text-ui-fg-base text-orange-600 font-medium"
+                href="/service"
+              >
+                服务
+              </LocalizedClientLink>
+              <LocalizedClientLink
                 className="hover:text-ui-fg-base"
                 href="/account"
                 data-testid="nav-account-link"

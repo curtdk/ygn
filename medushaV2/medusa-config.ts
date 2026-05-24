@@ -23,6 +23,15 @@ module.exports = defineConfig({
       resolve: "./src/modules/user-video",
     },
     {
+      resolve: "./src/modules/service-provider",
+    },
+    {
+      resolve: "./src/modules/service-product",
+    },
+    {
+      resolve: "./src/modules/commission",
+    },
+    {
       resolve: "@medusajs/file",
       options: {
         providers: [
