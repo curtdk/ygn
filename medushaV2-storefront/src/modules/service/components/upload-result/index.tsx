@@ -31,11 +31,8 @@ export default function UploadResultForm({ orderId, onSubmit, onCancel }: Upload
       const formData = new FormData()
       formData.append("file", file)
 
-      const response = await fetch("/admin/upload", {
+      const response = await fetch("/api/upload", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
-        },
         body: formData,
       })
 

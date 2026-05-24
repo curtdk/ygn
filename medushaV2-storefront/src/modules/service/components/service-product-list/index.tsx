@@ -26,7 +26,7 @@ export default function ServiceProductList() {
   const loadProducts = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/store/service-products")
+      const response = await fetch("/api/service-products")
       if (response.ok) {
         const result = await response.json()
         setProducts(result.service_products || [])

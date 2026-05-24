@@ -50,9 +50,7 @@ export default function ServiceOrderList({ onOrderClick }: ServiceOrderListProps
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch("/store/service-orders", {
-        credentials: "include",
-      })
+      const response = await fetch("/api/service-orders")
       if (!response.ok) throw new Error("加载失败，请确认已登录")
       const data = await response.json()
       setOrders(data.orders || [])

@@ -65,10 +65,9 @@ export default function ServiceTemplate() {
   const handleGrabOrder = async (order: any) => {
     setActionLoading(true)
     try {
-      const res = await fetch(`/store/service-orders/${order.id}`, {
+      const res = await fetch(`/api/service-orders/${order.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ action: "accept" }),
       })
       if (res.ok) {
@@ -87,10 +86,9 @@ export default function ServiceTemplate() {
   const handleStartService = async (orderId: string) => {
     setActionLoading(true)
     try {
-      await fetch(`/store/service-orders/${orderId}`, {
+      await fetch(`/api/service-orders/${orderId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ action: "start" }),
       })
       refresh()
@@ -102,10 +100,9 @@ export default function ServiceTemplate() {
   const handleConfirmComplete = async (orderId: string) => {
     setActionLoading(true)
     try {
-      await fetch(`/store/service-orders/${orderId}`, {
+      await fetch(`/api/service-orders/${orderId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ action: "complete" }),
       })
       refresh()
@@ -248,10 +245,9 @@ export default function ServiceTemplate() {
               onSubmit={async (resultUrl, resultThumbnail) => {
                 try {
                   const action = order.status === "accepted" ? "start" : "complete"
-                  await fetch(`/store/service-orders/${order.id}`, {
+                  await fetch(`/api/service-orders/${order.id}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    credentials: "include",
                     body: JSON.stringify({
                       action,
                       result_url: resultUrl,

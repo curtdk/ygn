@@ -23,11 +23,7 @@ export default function TeamHierarchy() {
   const loadTeamData = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/store/referrals", {
-        headers: {
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
-        },
-      })
+      const response = await fetch("/api/referrals")
       
       if (response.ok) {
         const data = await response.json()

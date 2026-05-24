@@ -37,11 +37,10 @@ export default function ServiceProviderApplication() {
     setMessage(null)
 
     try {
-      const response = await fetch("/store/service-providers", {
+      const response = await fetch("/api/service-providers/apply", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
         },
         body: JSON.stringify(formData),
       })

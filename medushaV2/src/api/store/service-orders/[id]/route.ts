@@ -1,6 +1,18 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { SERVICE_PRODUCT_MODULE } from "../../../../modules/service-product"
 
+function extractCustomerId(req: MedusaRequest): string | null {
+  const authHeader = req.headers.authorization
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.slice(7)
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString())
+      return payload.actor_id || payload.customer_id || payload.app_metadata?.customer_id || null
+    } catch {}
+  }
+  return null
+}
+
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const serviceProductService = req.scope.resolve(SERVICE_PRODUCT_MODULE)
   const { id } = req.params
@@ -14,7 +26,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const serviceProductService = req.scope.resolve(SERVICE_PRODUCT_MODULE)
-  const customerId = (req as any).auth?.actor_id
+  const customerId = (req as any).auth?.actor_id || extractCustomerId(req)
   const { id } = req.params
   const body = req.body as any
   const { action, result_url, result_thumbnail, rating, comment } = body

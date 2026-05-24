@@ -24,7 +24,7 @@ export default function ServiceProductCard({ product }: Props) {
   const handleOrder = async () => {
     setLoading(true)
     try {
-      await fetch("/store/service-orders", {
+      await fetch("/api/service-orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

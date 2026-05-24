@@ -22,11 +22,10 @@ export default function ServiceReviewForm({ orderId, onSubmit }: ServiceReviewFo
     setMessage(null)
 
     try {
-      const response = await fetch(`/store/service-orders/${orderId}`, {
+      const response = await fetch(`/api/service-orders/${orderId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
         },
         body: JSON.stringify({
           action: "review",

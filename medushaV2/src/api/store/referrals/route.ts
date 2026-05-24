@@ -1,12 +1,24 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { SERVICE_PROVIDER_MODULE } from "../../../modules/service-provider"
 
+function extractCustomerId(req: MedusaRequest): string | null {
+  const authHeader = req.headers.authorization
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.slice(7)
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString())
+      return payload.actor_id || payload.customer_id || payload.app_metadata?.customer_id || null
+    } catch {}
+  }
+  return null
+}
+
 export async function GET(
   req: MedusaRequest,
   res: MedusaResponse
 ) {
   const serviceProviderService = req.scope.resolve(SERVICE_PROVIDER_MODULE)
-  const loggedInUserId = (req as any).auth?.customer?.id
+  const loggedInUserId = (req as any).auth?.customer?.id || extractCustomerId(req)
 
   if (!loggedInUserId) {
     return res.status(401).json({ error: "Unauthorized" })
@@ -17,7 +29,7 @@ export async function GET(
     customer_id: loggedInUserId,
   })
 
-  const referralCode = referrals[0]?.referral_code || await serviceProviderService.generateReferralCode()
+  const referralCode = referrals[0]?.referral_code || `REF-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 
   // Save referral code if not exists
   if (!referrals[0]) {
@@ -49,7 +61,7 @@ export async function POST(
   res: MedusaResponse
 ) {
   const serviceProviderService = req.scope.resolve(SERVICE_PROVIDER_MODULE)
-  const loggedInUserId = (req as any).auth?.customer?.id
+  const loggedInUserId = (req as any).auth?.customer?.id || extractCustomerId(req)
 
   if (!loggedInUserId) {
     return res.status(401).json({ error: "Unauthorized" })
@@ -87,20 +99,8 @@ export async function POST(
     customer_id: loggedInUserId,
     referrer_id: referrer.customer_id,
     level: 1,
-    referral_code: await serviceProviderService.generateReferralCode(),
+    referral_code: `REF-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
   })
-
-  // Level 2 & 3: Follow the referrer's chain
-  const referrerChain = await serviceProviderService.getReferralChain(referrer.customer_id, 3)
-
-  for (const item of referrerChain) {
-    await serviceProviderService.createCustomerReferrals({
-      customer_id: loggedInUserId,
-      referrer_id: item.referrer_id,
-      level: item.level + 1,
-      referral_code: null, // Only level 1 has the code
-    })
-  }
 
   res.json({ success: true })
 }

@@ -23,11 +23,7 @@ const ReferralCode = () => {
   const loadReferralInfo = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch("/store/referrals", {
-        headers: {
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
-        },
-      })
+      const response = await fetch("/api/referrals")
       if (response.ok) {
         const result = await response.json()
         setData(result)
@@ -49,11 +45,10 @@ const ReferralCode = () => {
     setMessage(null)
 
     try {
-      const response = await fetch("/store/referrals", {
+      const response = await fetch("/api/referrals", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}`,
         },
         body: JSON.stringify({ referral_code: code }),
       })

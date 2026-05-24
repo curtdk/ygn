@@ -1,8 +1,20 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { SERVICE_PRODUCT_MODULE } from "../../../modules/service-product"
 
+function extractCustomerId(req: MedusaRequest): string | null {
+  const authHeader = req.headers.authorization
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.slice(7)
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString())
+      return payload.actor_id || payload.customer_id || payload.app_metadata?.customer_id || null
+    } catch {}
+  }
+  return null
+}
+
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const customerId = (req as any).auth?.actor_id
+  const customerId = (req as any).auth?.actor_id || extractCustomerId(req)
 
   if (!customerId) {
     return res.status(401).json({ error: "Unauthorized" })
@@ -24,7 +36,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 }
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const customerId = (req as any).auth?.actor_id
+  const customerId = (req as any).auth?.actor_id || extractCustomerId(req)
 
   if (!customerId) {
     return res.status(401).json({ error: "Unauthorized" })

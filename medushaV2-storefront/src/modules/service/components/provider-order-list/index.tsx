@@ -54,9 +54,7 @@ export default function ProviderOrderList({ onOrderClick, onGrabOrder }: Provide
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/store/service-orders/provider", {
-        credentials: "include",
-      })
+      const res = await fetch("/api/service-orders/provider")
       if (!res.ok) throw new Error("加载失败")
       const data = await res.json()
       setOrders(data.orders || [])
